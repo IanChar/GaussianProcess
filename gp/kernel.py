@@ -26,14 +26,14 @@ class Kernel(object):
     def get_hps(self):
         return self._hps
 
-    def __call__(self, a, b):
+    def __call__(self, x1, x2):
         """Evaluate kernel function."""
-        a = np.asarray(a).flatten()
-        b = np.asarray(b).flatten()
-        return self._make_comparison(a, b)
+        x1 = np.asarray(x1).flatten()
+        x2 = np.asarray(x2).flatten()
+        return self._make_comparison(x1, x2)
 
-    def _make_comparison(self, a, b):
-        """Make comparison between two points, a and b (both ndarrays)."""
+    def _make_comparison(self, x1, x2):
+        """Make comparison between two points, x1 and x2 (both ndarrays)."""
         raise NotImplementedError('To be implemented in child.')
 
     def _get_default_hps(self):
@@ -53,14 +53,15 @@ class SqExpKernel(Kernel):
     Hyperparameters: [scale, bandwidth]
     """
 
-    def _make_comparison(self, a, b):
-        """Make comparison between two points, a and b (both ndarrays)."""
+    def _make_comparison(self, x1, x2):
+        """Make comparison between two points, x1 and x2 (both ndarrays)."""
         b, s = self._hps['bandwidth'], self._hps['scale']
-        return (s ** 2) * np.exp(-1 * np.linalg.norm(a - b) ** 2 / (2 * b ** 2))
+        scale = s ** 2
+        return scale * np.exp(-1 * np.linalg.norm(x1 - x2) ** 2 / (2 * b ** 2))
 
     def _get_default_hps(self):
         """Get default HPs if none are specified."""
-        return {'bandwidth': 1, 'scale': 1}
+        return {'bandwidth': 0.1, 'scale': 1}
 
 
 basic_kernels = [Namespace(name='sqexp', obj=SqExpKernel)]

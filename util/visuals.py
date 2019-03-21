@@ -20,20 +20,21 @@ def plot_oned_info(gp, fidelity=50, num_samps=3, ax=None):
         ax = fig.add_subplot(1, 1, 1)
     # Plot the observations.
     x_pts = [dat[0] for dat in gp.x_data]
-    ax.scatter(gp.x_data, gp.y_data, marker='X')
+    ax.scatter(gp.x_data, gp.y_data, marker='X', color='k')
     # Plot the mean curve.
     samp_pts = np.linspace(0, 1, fidelity)
     samp_data = [[pt] for pt in samp_pts]
     mu, cov = gp.get_posterior(samp_data)
+    mu = mu.flatten()
     ax.plot(samp_pts, mu, color='k')
     # Plot the high confidence region.
     stds = np.sqrt(cov.diagonal())
-    upper, lower = mu + stds, mu - stds
+    upper, lower = mu + 2 * stds, mu - 2 * stds
     ax.fill_between(samp_pts, lower, upper, where=lower <= upper,
                     facecolor='grey', interpolate=True, alpha=0.5)
     # Plot samples.
     for _ in xrange(num_samps):
-        samp_ys = gp.draw_samples(1, samp_pts, mean=mu, cov=cov)
+        samp_ys = gp.draw_samples(1, samp_pts, mean=mu, cov=cov).flatten()
         ax.plot(samp_pts, samp_ys)
     return ax
 

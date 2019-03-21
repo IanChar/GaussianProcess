@@ -9,7 +9,7 @@ from gp.gp_creation import create_specified_gp
 from util.visuals import plot_oned_info
 
 def random_oned_visual(kernel_name, num_rand_pts):
-    gp = create_specified_gp([[0, 1]], 'sqexp')
+    gp = create_specified_gp([[0, 1]], 'sqexp', 0.1)
     rand_x = [[np.random.uniform(0, 1)] for _ in xrange(num_rand_pts)]
     rand_y = [[np.random.uniform(-1, 1)] for _ in xrange(num_rand_pts)]
     gp.add_observations(rand_x, rand_y)

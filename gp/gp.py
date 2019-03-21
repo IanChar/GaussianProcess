@@ -71,7 +71,7 @@ class GP(object):
         """
         if mean is None or cov is None:
             mean, cov = self.get_posterior(pts)
-        return np.random.multivariate_normal(mu, cov, size=num_samples)
+        return np.random.multivariate_normal(mean, cov, size=num_samples)
 
     def _get_single_pt_posterior(self, pt, only_mean):
         """Get the posterior mean and (maybe) covariance
@@ -102,7 +102,7 @@ class GP(object):
 
     def _get_pt_cov_mat(self, pts):
         """Get covariance matrix between points."""
-        num_pts = len(self.x_data)
+        num_pts = len(pts)
         pt_cov = np.ndarray((num_pts, num_pts))
         for i in xrange(num_pts):
             for j in xrange(i, num_pts):
