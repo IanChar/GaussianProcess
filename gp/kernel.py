@@ -2,12 +2,17 @@
 Kernel parent class and its implementations.
 """
 
+from argparse import Namespace
+
+import numpy as np
+
 class Kernel(object):
 
     def __init__(self, hps=None, **kwargs):
         """Constructor.
         Args:
             hps: Dictionary of hyperparameters for the kernel.
+                If None, get default hps.
         """
         if hps is None:
             self._hps = self._get_default_hps()
@@ -23,6 +28,8 @@ class Kernel(object):
 
     def __call__(self, a, b):
         """Evaluate kernel function."""
+        a = np.asarray(a).flatten()
+        b = np.asarray(b).flatten()
         return self._make_comparison(a, b)
 
     def _make_comparison(self, a, b):
@@ -48,10 +55,14 @@ class SqExpKernel(Kernel):
 
     def _make_comparison(self, a, b):
         """Make comparison between two points, a and b (both ndarrays)."""
-        pass
+        b, s = self._hps['bandwidth'], self._hps['scale']
+        return (s ** 2) * np.exp(-1 * np.linalg.norm(a - b) ** 2 / (2 * b ** 2))
 
     def _get_default_hps(self):
         """Get default HPs if none are specified."""
-        pass
+        return {'bandwidth': 1, 'scale': 1}
 
 
+basic_kernels = [Namespace(name='sqexp', obj=SqExpKernel)]
+
+all_kernels = basic_kernels
