@@ -28,12 +28,13 @@ def create_gp(domain, kernel_name, noise=None, hps=None, **kwargs):
     gp = GP(domain, kernel, default_noise)
     return gp
 
-def create_tuned_gp(domain, kernel_name, x_data, y_data, **kwargs):
+def create_tuned_gp(domain, kernel_name, x_data, y_data, maxfs=50, **kwargs):
     """Tune the gp.
     Args:
         gp: The GP object.
         pts: List of lists representing the points.
         num_pts: Number of random points to be used if pts not specified.
+        maxfs: Maximum number of GPs to build in tuning.
     Returns: Tuned GP (note does not have data added to it).
     """
     kernel_creator = None
@@ -55,7 +56,10 @@ def create_tuned_gp(domain, kernel_name, x_data, y_data, **kwargs):
         return return_val
     bounds = [[0.0001, 1]] + [[hp_info.lower, hp_info.upper]
                                for hp_info in hp_specs]
-    best_specs = direct_min(objective, bounds).x
+    if maxfs is not None:
+        best_specs = direct_min(objective, bounds, maxf=maxfs).x
+    else:
+        best_specs = direct_min(objective, bounds).x
     noise = best_specs[0]
     hps = {}
     for idx in xrange(len(hp_specs)):
