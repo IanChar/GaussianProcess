@@ -22,8 +22,8 @@ class GP(object):
         self.x_data = []
         self.y_data = []
         self._data_cov = None
-        self._data_cov_inv = None
-        self._cached_cho = None
+        self._cho = None
+        self._alpha = None
 
     def add_observations(self, x_data, y_data):
         """ Add observations to the GP.
@@ -33,8 +33,8 @@ class GP(object):
         """
         self.x_data += x_data
         self.y_data += y_data
-        self._data_cov_inv = None
-        self._cached_cho = None
+        self._cho = None
+        self._alpha = None
         self._update_data_cov_mat(x_data)
 
     def get_posterior(self, pts, only_mean=False):
@@ -43,22 +43,16 @@ class GP(object):
             pts: Points represented as list of lists.
             only_mean: Only calculate the mean without returning cov mat.
         """
-        num_pts, num_data = len(pts), len(self.x_data)
-        if num_pts == 1:
-            return _get_single_pt_posterior(pts[0], only_mean)
-        # Get matrix K(X_*, X) (i.e. covariances between seen points)
         k_star = self._get_data_interaction_mat(pts)
-        # Get (K(X, X) + sigma I)^-1
-        data_inv = self._get_cached_inverse()
-        # Get posterior mean info.
-        intermediate = np.dot(k_star, data_inv)
-        mu = np.dot(intermediate, np.asarray(self.y_data))
+        if len(pts) == 1:
+            k_star = k_star.flatten()
+        L, alpha = self._get_posterior_help()
+        mu = np.dot(k_star, alpha)
         if only_mean:
             return mu
-        # Get covariance matrix for new points.
+        v = la.solve_triangular(L, k_star.T, lower=True)
         pt_cov = self._get_pt_cov_mat(pts)
-        # Get posterior covariance info.
-        cov = pt_cov - np.dot(intermediate, k_star.T)
+        cov = pt_cov - np.dot(v.T, v)
         return mu, cov
 
     def draw_samples(self, num_samples, pts, mean=None, cov=None):
@@ -75,29 +69,12 @@ class GP(object):
 
     def get_log_marginal_likelihood(self):
         """Get the log marginal likelihood for observations."""
-        data_cov_inv = self._get_cached_inverse()
-        y_vec = np.asarray(self.y_data).flatten()
-        fit_term = np.dot(y_vec.T, np.dot(data_cov_inv, y_vec))
-        noise_offset = self.noise * np.eye(self._data_cov.shape[0])
-        penalty_term = np.log(np.linalg.det(self._data_cov + noise_offset))
-        normalize_term = len(self.x_data) * np.log(2 * np.pi)
-        return (fit_term + penalty_term + normalize_term) / -2
-
-    def _get_single_pt_posterior(self, pt, only_mean):
-        """Get the posterior mean and (maybe) covariance
-        Args:
-            pt: Point as a list.
-            only_mean: Only calculate the mean without returning cov mat.
-        """
-        k_star = self._get_data_interaction_mat([pt]).flatten()
-        L = self._get_cholesky()
-        alpha = la.cho_solve((L, True), np.asarray(self.y_data))
-        v = la.solve_triangular(L, k_star, lower=True)
-        mu = np.dot(k_star, alpha)
-        if only_mean:
-            return mu
-        cov = self.kernel(pt, pt) - np.dot(v, v)
-        return mu, cov
+        L, alpha = self._get_posterior_help()
+        y = np.asarray(self.y_data).flatten()
+        fit_term = np.dot(y, alpha)
+        penalty_term = np.sum(np.log(L.diagonal()))
+        regularizer = len(self.x_data) * np.log(2 * np.pi)
+        return -0.5 * (fit_term + penalty_term + regularizer)
 
     def _update_data_cov_mat(self, x_data):
         """Update covariance matrix of seen observations."""
@@ -113,7 +90,7 @@ class GP(object):
     def _get_pt_cov_mat(self, pts):
         """Get covariance matrix between points."""
         num_pts = len(pts)
-        pt_cov = np.ndarray((num_pts, num_pts))
+        pt_cov = np.zeros((num_pts, num_pts))
         for i in xrange(num_pts):
             for j in xrange(i, num_pts):
                 val = self.kernel(pts[i], pts[j])
@@ -132,15 +109,11 @@ class GP(object):
                 k_star[i, j] = self.kernel(pts[i], self.x_data[j])
         return k_star
 
-    def _get_cholesky(self):
+    def _get_posterior_help(self):
         """Get the cholesky decomposition of the data covariance matrix."""
-        if self._cached_cho is None:
-            self._cached_cho = la.cho_factor(self._kern_mat, lower=True)[0]
-        return self._cached_cho
-
-    def _get_cached_inverse(self):
-        """Get or compute the return the inverse of data covariance."""
-        if self._data_cov_inv is None:
-            noise_offset = self.noise * np.eye(self._data_cov.shape[0])
-            self._data_cov_inv = np.linalg.inv(self._data_cov + noise_offset)
-        return self._data_cov_inv
+        if self._cho is None or self._alpha is None:
+            kern_mat = self._data_cov + self.noise * np.eye(len(self.x_data))
+            self._cho = la.cho_factor(kern_mat, lower=True)[0]
+            self._alpha = la.cho_solve((self._cho, True),
+                                        np.asarray(self.y_data))
+        return self._cho, self._alpha.flatten()

@@ -93,8 +93,8 @@ class SqExpKernel(Kernel):
             * upper: Upper bound for HP.
         """
         return [\
-            Namespace(name='bandwidth', default=0.1, lower=0.001, upper=0.1),
-            Namespace(name='scale', default=1, lower=0.001, upper=0.1)
+            Namespace(name='bandwidth', default=0.1, lower=0.001, upper=1),
+            Namespace(name='scale', default=1, lower=0.001, upper=1)
         ]
 
 basic_kernels = [Namespace(name='sqexp', obj=SqExpKernel)]

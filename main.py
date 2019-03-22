@@ -17,5 +17,5 @@ def random_oned_visual(kernel_name, num_rand_pts):
     plt.show()
 
 if __name__ == '__main__':
-    import pudb; pudb.set_trace()
+    # import pudb; pudb.set_trace()
     random_oned_visual('sqexp', 5)

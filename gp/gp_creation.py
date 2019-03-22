@@ -24,7 +24,7 @@ def create_gp(domain, kernel_name, noise=None, hps=None, **kwargs):
     if kernel is None:
         raise ValueError('Kernel %s not found.' % kernel_name)
     # Make default noise small but positive. Helps with SPD conditions.
-    default_noise = 0.001
+    default_noise = 0.01
     gp = GP(domain, kernel, default_noise)
     return gp
 
@@ -53,7 +53,7 @@ def create_tuned_gp(domain, kernel_name, x_data, y_data, **kwargs):
         gp.add_observations(x_data, y_data)
         return_val = -1 * gp.get_log_marginal_likelihood()
         return return_val
-    bounds = [[0.0001, 0.1]] + [[hp_info.lower, hp_info.upper]
+    bounds = [[0.0001, 1]] + [[hp_info.lower, hp_info.upper]
                                for hp_info in hp_specs]
     best_specs = direct_min(objective, bounds).x
     noise = best_specs[0]
