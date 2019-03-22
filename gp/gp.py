@@ -73,6 +73,16 @@ class GP(object):
             mean, cov = self.get_posterior(pts)
         return np.random.multivariate_normal(mean, cov, size=num_samples)
 
+    def get_log_marginal_likelihood(self):
+        """Get the log marginal likelihood for observations."""
+        data_cov_inv = self._get_cached_inverse()
+        y_vec = np.asarray(self.y_data).flatten()
+        fit_term = np.dot(y_vec.T, np.dot(data_cov_inv, y_vec))
+        noise_offset = self.noise * np.eye(self._data_cov.shape[0])
+        penalty_term = np.log(np.linalg.det(self._data_cov + noise_offset))
+        normalize_term = len(self.x_data) * np.log(2 * np.pi)
+        return (fit_term + penalty_term + normalize_term) / -2
+
     def _get_single_pt_posterior(self, pt, only_mean):
         """Get the posterior mean and (maybe) covariance
         Args:

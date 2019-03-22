@@ -29,7 +29,7 @@ def plot_oned_info(gp, fidelity=50, num_samps=3, ax=None):
     ax.plot(samp_pts, mu, color='k')
     # Plot the high confidence region.
     stds = np.sqrt(cov.diagonal())
-    upper, lower = mu + 2 * stds, mu - 2 * stds
+    upper, lower = mu + 3 * stds, mu - 3 * stds
     ax.fill_between(samp_pts, lower, upper, where=lower <= upper,
                     facecolor='grey', interpolate=True, alpha=0.5)
     # Plot samples.
