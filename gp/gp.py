@@ -31,11 +31,11 @@ class GP(object):
             x_data: List of list of points.
             y_data: List of observations.
         """
+        self._update_data_cov_mat(x_data)
         self.x_data += x_data
         self.y_data += y_data
         self._cho = None
         self._alpha = None
-        self._update_data_cov_mat(x_data)
 
     def get_posterior(self, pts, only_mean=False):
         """Get the posterior mean and (maybe) cov matrix.

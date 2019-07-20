@@ -23,6 +23,21 @@ def random_oned_visual(kernel_name, num_rand_pts, maxfs=None):
     plot_oned_info(gp)
     plt.show()
 
+def incremental_oned_viz(kernel_name, max_pts, maxfs=None):
+    """Create visual for one D functions where data is chosen randomly.
+    Args:
+        kernel_name: The name of the kernel to use.
+        num_rand_pts: Number of random points to use.
+        maxfs: Maximum number of GPs to build in tuning.
+    """
+    rand_x = [[x] for x in np.linspace(0, 1, max_pts)]
+    rand_y = [[np.random.uniform(-1, 1)] for _ in xrange(max_pts)]
+    gp = create_tuned_gp([[0, 1]], kernel_name, rand_x, rand_y, maxfs=maxfs)
+    for data_idx in range(max_pts):
+        gp.add_observations([rand_x[data_idx]], [rand_y[data_idx]])
+        plot_oned_info(gp)
+        plt.show()
+
 def plot_fitted_2d_func(kernel_name, func_name, num_evals, maxfs=50):
     """Create 2D surface plot for a specific function.
     Args:
@@ -70,4 +85,5 @@ def plot_pre_tuned_jeff(num_evals):
     print gp.get_log_marginal_likelihood()
 
 if __name__ == '__main__':
-    random_oned_visual('sqexp', 5)
+    # import pudb; pudb.set_trace()
+    incremental_oned_viz('sqexp', 3)
